@@ -8,7 +8,7 @@ from transformers import AdamW
 from sklearn.metrics import accuracy_score, f1_score
 
 
-class model(pl.LightningModule):
+class BERTology(pl.LightningModule):
     def __init__(self,
                  transformer,
                  output_dim,
