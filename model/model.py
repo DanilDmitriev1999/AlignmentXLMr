@@ -88,7 +88,6 @@ class model(pl.LightningModule):
         mask = batch['attention_mask']
 
         predictions = self(text, mask)
-
         loss = self.cross_entropy_loss(predictions, labels)
 
         predict = torch.argmax(predictions, dim=-1)
@@ -116,7 +115,6 @@ class model(pl.LightningModule):
         mask = batch['attention_mask']
 
         predictions = self(text, mask)
-
         loss = self.cross_entropy_loss(predictions, labels)
 
         predict = torch.argmax(predictions, dim=-1)
@@ -144,7 +142,6 @@ class model(pl.LightningModule):
         mask = batch['attention_mask']
 
         predictions = self(text, mask)
-
         loss = self.cross_entropy_loss(predictions, labels)
 
         predict = torch.argmax(predictions, dim=-1)
