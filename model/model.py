@@ -77,7 +77,7 @@ class model(pl.LightningModule):
         y_true = [self.idx2tag[l] for l in y_true]
         y_pred = [self.idx2tag[l] for l in y_pred]
 
-        ids = [i for i, label in enumerate(y_true) if label != "X"]
+        ids = [i for i, label in enumerate(y_true) if label != "X" and label != self.idx2tag[0]]
         y_true_cleaned = [y_true[i] for i in ids]
         y_pred_cleaned = [y_pred[i] for i in ids]
         return y_true_cleaned, y_pred_cleaned
