@@ -43,7 +43,9 @@ class BERTology(pl.LightningModule):
         self.all_attention_score = {i: [] for i in range(1)}
 
     def forward(self, text, mask):
-        pooler_output, _, attention = self.transformer_model(text, mask)
+        output = self.transformer_model(text, mask)
+        pooler_output = output['pooler_output']
+        attention = output['attentions']
         embedded = self.dropout(pooler_output)
 
         result = self.linear_layer(embedded)
