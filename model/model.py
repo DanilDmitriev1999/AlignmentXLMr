@@ -44,7 +44,7 @@ class BERTology(pl.LightningModule):
 
     def forward(self, text, mask):
         output = self.transformer_model(text, mask)
-        pooler_output = output['pooler_output']
+        pooler_output = output['last_hidden_state']
         attention = output['attentions']
         embedded = self.dropout(pooler_output)
 
