@@ -37,7 +37,7 @@ class BERTology(pl.LightningModule):
         self.criterion = nn.CrossEntropyLoss(ignore_index=self.X)
         self.flatten = lambda l: [item for sublist in l for item in sublist]
 
-        self.attention_entropy = torch.zeros(12, 12).to('cuda')
+        self.attention_entropy = torch.zeros(12, 12)
         self.epoch = 0
         self.avg_attention_score = []
         self.all_attention_score = {i: [] for i in range(1)}
@@ -97,13 +97,15 @@ class BERTology(pl.LightningModule):
         return -plogp.sum(dim=-1)
 
     def culc_attention_score(self, attention, mask):
-        local_attention_entropy = torch.zeros(12, 12).to('cuda')
+        local_attention_entropy = torch.zeros(12, 12)
+        attention = attention.detach().to('cpu')
+        mask = mask.detach().to('cpu')
         for layer, attn in enumerate(attention):
             masked_entropy = self.entropy_attention(attn.detach()) * mask.float().unsqueeze(1)
-            self.attention_entropy[layer] += masked_entropy.mean(-1).mean(0).detach()
-            local_attention_entropy[layer] += masked_entropy.mean(-1).mean(0).detach()
+            self.attention_entropy[layer] += masked_entropy.mean(-1).mean(0)
+            local_attention_entropy[layer] += masked_entropy.mean(-1).mean(0)
 
-        self.all_attention_score[self.epoch].append(local_attention_entropy.to('cpu').numpy())
+        self.all_attention_score[self.epoch].append(local_attention_entropy.numpy())
 
     def training_step(self, batch, batch_idx):
         text = batch['input_ids']
@@ -133,8 +135,8 @@ class BERTology(pl.LightningModule):
         return loss
 
     def training_epoch_end(self, training_step_outputs):
-        self.avg_attention_score.append(self.attention_entropy.to('cpu').numpy())
-        self.attention_entropy = torch.zeros(12, 12).to('cuda')
+        self.avg_attention_score.append(self.attention_entropy.numpy())
+        self.attention_entropy = torch.zeros(12, 12)
         self.epoch += 1
         return None
 
