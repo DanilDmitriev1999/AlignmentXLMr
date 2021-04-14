@@ -37,20 +37,12 @@ class BERTology(pl.LightningModule):
         self.criterion = nn.CrossEntropyLoss(ignore_index=self.X)
         self.flatten = lambda l: [item for sublist in l for item in sublist]
 
-        self.attention_entropy = torch.zeros(12, 12)
-        self.epoch = 0
-        self.avg_attention_score = []
-        self.all_attention_score = {i: [] for i in range(1)}
-
     def forward(self, text, mask):
-        output = self.transformer_model(text, mask)
-        pooler_output = output['last_hidden_state']
-        attention = output['attentions']
-        embedded = self.dropout(pooler_output)
+        embedded = self.dropout(self.transformer_model(text, mask)[0])
 
         result = self.linear_layer(embedded)
 
-        return result, attention
+        return result
 
     def configure_optimizers(self):
         optimizer = AdamW(self.parameters(), lr=self.lr)
@@ -90,31 +82,14 @@ class BERTology(pl.LightningModule):
         y_pred_cleaned = [y_pred[i] for i in ids]
         return y_true_cleaned, y_pred_cleaned
 
-    @staticmethod
-    def entropy_attention(p):
-        plogp = p * torch.log(p)
-        plogp[p == 0] = 0
-        return -plogp.sum(dim=-1)
-
-    def culc_attention_score(self, attention, mask):
-        local_attention_entropy = torch.zeros(12, 12)
-        attention = attention.detach().to('cpu')
-        mask = mask.detach().to('cpu')
-        for layer, attn in enumerate(attention):
-            masked_entropy = self.entropy_attention(attn.detach()) * mask.float().unsqueeze(1)
-            self.attention_entropy[layer] += masked_entropy.mean(-1).mean(0)
-            local_attention_entropy[layer] += masked_entropy.mean(-1).mean(0)
-
-        self.all_attention_score[self.epoch].append(local_attention_entropy.numpy())
-
     def training_step(self, batch, batch_idx):
         text = batch['input_ids']
         labels = batch['labels']
         mask = batch['attention_mask']
 
-        predictions, attention = self(text, mask)
+        predictions = self(text, mask)
         loss = self.cross_entropy_loss(predictions, labels)
-        self.culc_attention_score(attention, mask)
+
         predict = torch.argmax(predictions, dim=-1)
 
         output = {
@@ -134,18 +109,12 @@ class BERTology(pl.LightningModule):
 
         return loss
 
-    def training_epoch_end(self, training_step_outputs):
-        self.avg_attention_score.append(self.attention_entropy.numpy())
-        self.attention_entropy = torch.zeros(12, 12)
-        self.epoch += 1
-        return None
-
     def validation_step(self, batch, batch_idx):
         text = batch['input_ids']
         labels = batch['labels']
         mask = batch['attention_mask']
 
-        predictions, _ = self(text, mask)
+        predictions = self(text, mask)
         loss = self.cross_entropy_loss(predictions, labels)
 
         predict = torch.argmax(predictions, dim=-1)
@@ -172,7 +141,7 @@ class BERTology(pl.LightningModule):
         labels = batch['labels']
         mask = batch['attention_mask']
 
-        predictions, _ = self(text, mask)
+        predictions = self(text, mask)
         loss = self.cross_entropy_loss(predictions, labels)
 
         predict = torch.argmax(predictions, dim=-1)
@@ -198,7 +167,3 @@ class BERTology(pl.LightningModule):
         self.log_dict(values)
 
         return loss
-
-
-if __name__ == '__main__':
-    pass
