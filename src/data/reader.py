@@ -75,7 +75,7 @@ class Reader:
         s = self.sentences[idx]['words']
         t = self.sentences[idx]['labels']
         for i, j in zip(s, t):
-            print(f'{i}\t\t\t{j}')
+            print(f'{i:25}{j}')
 
     def get_idx2tag(self) -> dict:
         idx2tag = {v: k for k, v in self.tag2idx.items()}
